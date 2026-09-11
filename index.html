@@ -244,36 +244,69 @@ window.createRoom=async function(){
 window.joinRoom=async function(){
  $("joinBtn").disabled=true;
  try{
-  const code=$("joinCode").value.trim().toUpperCase();
+  const code=$("joinCode").value.trim().toUpperCase().replace(/\s+/g,"");
   const name=$("joinName").value.trim();
-  if(!code||!name){alert("Enter the room code and your captain/team name.");return}
 
-  const result=await runTransaction(ref(db,"rooms/"+code),current=>{
-   if(!current)return;
-   if(current.started)return;
-   current.members=current.members||{};
-   current.teams=current.teams||[];
+  if(code.length!==6){
+   alert("Enter the 6-character room code exactly as shown by the host.");
+   return;
+  }
+  if(!name){
+   alert("Enter your captain/team name.");
+   return;
+  }
 
-   if(current.members[clientId])return current;
+  const roomRef=ref(db,"rooms/"+code);
+  const snap=await get(roomRef);
 
-   const team=current.teams.find(t=>!t.memberId);
-   if(!team)return;
+  if(!snap.exists()){
+   alert("Room "+code+" was not found. Check the code and make sure the host is still on the room.");
+   return;
+  }
 
-   team.memberId=clientId;
-   team.name=name;
-   current.members[clientId]={name,teamId:team.id};
-   return current;
+  const current=snap.val();
+
+  if(current.started){
+   alert("This auction has already started. New captains cannot join now.");
+   return;
+  }
+
+  const teams=Array.isArray(current.teams)?current.teams:Object.values(current.teams||{});
+  const freeIndex=teams.findIndex(t=>!t.memberId);
+
+  if(freeIndex<0){
+   alert("All captain/team slots in this room are already occupied.");
+   return;
+  }
+
+  /* Reserve the exact free team with a transaction.
+     This prevents two phones from taking the same team. */
+  const teamRef=ref(db,"rooms/"+code+"/teams/"+freeIndex);
+  const reserved=await runTransaction(teamRef,team=>{
+   if(!team || team.memberId)return;
+   return {...team,memberId:clientId,name};
   });
 
-  if(!result.committed){alert("Room is full, already started, or does not exist.");return}
+  if(!reserved.committed){
+   alert("That team was just taken. Please press JOIN again.");
+   return;
+  }
+
+  await update(roomRef,{
+   ["members/"+clientId]:{name,teamId:freeIndex}
+  });
 
   roomCode=code;
   saveSession();
   subscribe();
- }catch(e){alert("Could not join room: "+e.message)}
- finally{$("joinBtn").disabled=false}
-};
 
+ }catch(e){
+  console.error(e);
+  alert("Could not join the room: "+(e?.message||e));
+ }finally{
+  $("joinBtn").disabled=false;
+ }
+};
 function renderLobby(){
  $("roomCodeDisplay").textContent=roomCode;
  const teams=room.teams||[];

@@ -1,220 +1,125 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Football Auction</title>
-
+<title>Football Player Auction</title>
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#07111f;
-  color:#fff;
-}
-.container{
-  max-width:1100px;
-  margin:auto;
-  padding:20px;
-}
-h1{text-align:center;margin-bottom:25px}
-.card{
-  background:#101d30;
-  border:1px solid #263952;
-  border-radius:14px;
-  padding:20px;
-  margin-bottom:18px;
-}
-input,textarea,button{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border-radius:8px;
-  border:1px solid #40536d;
-  font-size:16px;
-}
-input,textarea{
-  background:#07111f;
-  color:white;
-}
-button{
-  background:#1769ff;
-  color:white;
-  border:0;
-  cursor:pointer;
-  font-weight:bold;
-}
-button:hover{opacity:.85}
-button:disabled{
-  opacity:.35;
-  cursor:not-allowed;
-}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:12px;
-}
-.team{
-  background:#16263d;
-  border-radius:12px;
-  padding:15px;
-}
-.team h3{margin-top:0}
-.money{color:#64e291;font-weight:bold}
-.player{
-  font-size:32px;
-  font-weight:bold;
-  text-align:center;
-  padding:30px 10px;
-}
-.bid{
-  font-size:20px;
-  padding:18px;
-}
-.big{
-  font-size:22px;
-  text-align:center;
-}
-.roomcode{
-  font-size:34px;
-  text-align:center;
-  letter-spacing:5px;
-  color:#61a4ff;
-}
-.chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:7px;
-}
-.chip{
-  background:#223650;
-  padding:7px 10px;
-  border-radius:20px;
-}
-.muted{color:#9aa9bd}
-.success{color:#65e49a}
-.warning{color:#ffd166}
-.danger{color:#ff7777}
-.hidden{display:none}
-textarea{min-height:150px}
-.status{
-  padding:10px;
-  border-radius:8px;
-  background:#172941;
-  margin-bottom:12px;
-}
+body{margin:0;font-family:Arial,sans-serif;background:#07111f;color:#fff}
+.container{max-width:1100px;margin:auto;padding:20px}
+h1{text-align:center;margin:10px 0 25px}
+.card{background:#101d30;border:1px solid #263952;border-radius:14px;padding:20px;margin-bottom:18px}
+input,textarea,button{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #40536d;font-size:16px}
+input,textarea{background:#07111f;color:#fff}
+textarea{min-height:170px;resize:vertical}
+button{background:#1769ff;color:#fff;border:0;cursor:pointer;font-weight:700}
+button:hover{opacity:.88} button:disabled{opacity:.35;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.team{background:#16263d;border-radius:12px;padding:15px}
+.team h3{margin-top:0}.money{color:#64e291;font-weight:700}
+.player{font-size:32px;font-weight:700;text-align:center;padding:30px 10px}
+.bid{font-size:19px;padding:18px}.big{font-size:22px;text-align:center}
+.roomcode{font-size:34px;text-align:center;letter-spacing:5px;color:#61a4ff}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:#223650;padding:7px 10px;border-radius:20px}
+.muted{color:#9aa9bd}.warning{color:#ffd166}.danger{color:#ff7777}.success{color:#65e49a}
+.hidden{display:none!important}.status{padding:12px;border-radius:8px;background:#172941;margin-bottom:12px}
+.notice{padding:12px;background:#172941;border-radius:8px;margin:10px 0}
+.small{font-size:13px;color:#9aa9bd}
+.host{border-left:4px solid #ffd166}
 </style>
 </head>
-
 <body>
 <div class="container">
-
 <h1>⚽ Football Player Auction</h1>
 
-<!-- HOME -->
-<div id="home">
-
+<section id="home">
 <div class="card">
 <h2>🏠 Create Auction Room</h2>
-
 <label>Number of teams / captains</label>
 <input id="teamCount" type="number" min="2" value="2">
-
 <label>Players per team</label>
 <input id="squadSize" type="number" min="1" value="7">
-
 <label>Budget per team (M)</label>
 <input id="budget" type="number" min="1" value="200">
-
 <label>Bid increment (M)</label>
 <input id="increment" type="number" min="1" value="5">
-
+<label>Your captain / team name</label>
+<input id="hostName" placeholder="e.g. Sami FC">
 <label>Player names — one per line</label>
-<textarea id="players"
-placeholder="Lionel Messi
+<textarea id="players" placeholder="Lionel Messi
 Cristiano Ronaldo
 Kylian Mbappe
-Erling Haaland
-..."></textarea>
-
-<button onclick="createRoom()">CREATE ROOM</button>
+Erling Haaland"></textarea>
+<button id="createBtn" onclick="createRoom()">CREATE ROOM</button>
 </div>
 
 <div class="card">
 <h2>🚪 Join Auction Room</h2>
-
-<input id="joinCode" placeholder="Enter room code">
+<input id="joinCode" placeholder="Enter 6-character room code">
 <input id="joinName" placeholder="Your captain / team name">
-
-<button onclick="joinRoom()">JOIN ROOM</button>
+<button id="joinBtn" onclick="joinRoom()">JOIN ROOM</button>
 </div>
+</section>
 
-</div>
-
-
-<!-- LOBBY -->
-<div id="lobby" class="hidden">
-
+<section id="lobby" class="hidden">
 <div class="card">
 <h2>🔑 Room Code</h2>
 <div class="roomcode" id="roomCodeDisplay"></div>
-<p class="muted" style="text-align:center">
-Share this code with the other captains.
-</p>
+<p class="muted" style="text-align:center">Share this code with the other captains.</p>
+<button onclick="copyRoomCode()">📋 COPY ROOM CODE</button>
 </div>
 
 <div class="card">
-<h2>👥 Captains Joined</h2>
-<div id="lobbyTeams"></div>
+<h2>👥 Lobby</h2>
+<div id="lobbyTeams" class="grid"></div>
 </div>
 
-<div id="hostControls" class="card hidden">
+<div id="hostLobby" class="card host hidden">
 <h2>👑 Host Controls</h2>
-<p>Make sure everyone has joined before starting.</p>
-<button onclick="startAuction()">▶ START AUCTION</button>
+<p id="hostLobbyInfo"></p>
+<button id="startBtn" onclick="startAuction()">▶ START AUCTION</button>
 </div>
 
 <div class="card">
-<p id="lobbyStatus" class="muted">Waiting for captains...</p>
+<p id="lobbyStatus" class="muted"></p>
+<button onclick="leaveRoom()">🚪 LEAVE ROOM</button>
 </div>
+</section>
 
-</div>
-
-
-<!-- AUCTION -->
-<div id="auction" class="hidden">
-
+<section id="auction" class="hidden">
 <div class="status">
-  Room: <b id="auctionRoom"></b>
-  &nbsp; | &nbsp;
-  Round: <b id="roundNumber">1</b>
-  <span id="myTeamLabel"></span>
+Room: <b id="auctionRoom"></b> &nbsp;|&nbsp;
+Round: <b id="roundNumber">1</b>
+<span id="myTeamLabel"></span>
 </div>
 
 <div class="card">
 <h2>🎯 Current Player</h2>
-<div id="currentPlayer" class="player">Waiting...</div>
-<div id="currentBid" class="big">Starting bid: 0M</div>
+<div id="currentPlayer" class="player">Waiting for host...</div>
+<div id="currentBid" class="big">No active bid</div>
+<div id="highestBidder" class="big small"></div>
 </div>
 
 <div class="card">
 <h2>💰 Place Bid</h2>
-<div id="bidButtons" class="grid"></div>
+<div id="myBidArea"></div>
+<div id="bidButtons"></div>
 </div>
 
 <div class="card">
-<h2>👥 Available Players</h2>
+<h2>👥 Available Players (<span id="availableCount">0</span>)</h2>
 <div id="availablePlayers" class="chips"></div>
+<p id="skippedInfo" class="small"></p>
 </div>
 
-<div id="hostAuctionControls" class="card hidden">
+<div id="hostAuction" class="card host hidden">
 <h2>👑 Host Controls</h2>
-
-<button onclick="hostNextPlayer()">🎲 Next Random Player</button>
-<button onclick="hostSellPlayer()">🔨 SOLD</button>
-<button onclick="hostSkipPlayer()">⏭ SKIP</button>
-<button onclick="hostUndo()">↩ UNDO</button>
+<button onclick="nextPlayer()">🎲 NEXT RANDOM PLAYER</button>
+<button onclick="sellPlayer()">🔨 SOLD</button>
+<button onclick="skipPlayer()">⏭ SKIP</button>
+<button onclick="undoSale()">↩ UNDO LAST SALE</button>
 </div>
 
 <div class="card">
@@ -226,944 +131,362 @@ Share this code with the other captains.
 <h2>📜 Auction History</h2>
 <div id="history"></div>
 </div>
-
+</section>
 </div>
-
-</div>
-
 
 <script type="module">
-
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getDatabase,
-  ref,
-  set,
-  get,
-  update,
-  onValue
-}
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getDatabase,ref,set,get,update,onValue,runTransaction}
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-
-/* =========================
-   FIREBASE
-========================= */
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBbsKY49O6lOoUjwaR5sKtwXeBUwUxrqXg",
-  authDomain: "football-auction-aba34.firebaseapp.com",
-  databaseURL: "https://football-auction-aba34-default-rtdb.firebaseio.com",
-  projectId: "football-auction-aba34",
-  storageBucket: "football-auction-aba34.firebasestorage.app",
-  messagingSenderId: "407836763206",
-  appId: "1:407836763206:web:1c12835bc53964cf05d647"
+const firebaseConfig={
+ apiKey:"AIzaSyBbsKY49O6lOoUjwaR5sKtwXeBUwUxrqXg",
+ authDomain:"football-auction-aba34.firebaseapp.com",
+ databaseURL:"https://football-auction-aba34-default-rtdb.firebaseio.com",
+ projectId:"football-auction-aba34",
+ storageBucket:"football-auction-aba34.firebasestorage.app",
+ messagingSenderId:"407836763206",
+ appId:"1:407836763206:web:1c12835bc53964cf05d647"
 };
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-
-/* =========================
-   LOCAL STATE
-========================= */
-
-let roomCode = "";
-let myId = localStorage.getItem("footballAuctionUserId") || crypto.randomUUID();
-localStorage.setItem("footballAuctionUserId", myId);
-let isHost = false;
-let roomData = null;
-
-
-/* =========================
-   HELPERS
-========================= */
-
-function $(id){
-  return document.getElementById(id);
+const CLIENT_KEY="footballAuctionClientId";
+let clientId=localStorage.getItem(CLIENT_KEY);
+if(!clientId){
+ clientId=(crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random());
+ localStorage.setItem(CLIENT_KEY,clientId);
 }
 
-function randomId(){
-  return Math.random().toString(36).substring(2,10);
+let roomCode="";
+let room=null;
+let unsubscribe=null;
+
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const show=id=>$(id).classList.remove("hidden");
+const hide=id=>$(id).classList.add("hidden");
+
+function session(){return JSON.parse(localStorage.getItem("footballAuctionRoom")||"null")}
+function saveSession(){localStorage.setItem("footballAuctionRoom",JSON.stringify({roomCode,clientId}))}
+function clearSession(){localStorage.removeItem("footballAuctionRoom")}
+function isHost(){return !!room && room.host===clientId}
+function myMember(){return room?.members?.[clientId]||null}
+function myTeam(){
+ const m=myMember();
+ return m ? (room.teams||[]).find(t=>t.id===m.teamId) : null;
 }
 
-function roomId(){
-  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code="";
-  for(let i=0;i<6;i++){
-    code += chars[Math.floor(Math.random()*chars.length)];
+function randomCode(){
+ const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+ let s="";
+ for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];
+ return s;
+}
+
+function subscribe(){
+ if(unsubscribe)unsubscribe();
+ unsubscribe=onValue(ref(db,"rooms/"+roomCode),snap=>{
+   if(!snap.exists()){
+     clearSession(); alert("This room no longer exists."); location.reload(); return;
+   }
+   room=snap.val();
+   saveSession();
+   render();
+ },err=>alert("Firebase error: "+err.message));
+}
+
+function render(){
+ if(room.started){hide("home");hide("lobby");show("auction");renderAuction()}
+ else{hide("home");hide("auction");show("lobby");renderLobby()}
+}
+
+window.createRoom=async function(){
+ $("createBtn").disabled=true;
+ try{
+  const teamCount=Math.max(2,parseInt($("teamCount").value)||2);
+  const squadSize=Math.max(1,parseInt($("squadSize").value)||1);
+  const budget=Math.max(1,Number($("budget").value)||200);
+  const increment=Math.max(1,Number($("increment").value)||5);
+  const hostName=$("hostName").value.trim();
+  const players=$("players").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+
+  if(!hostName){alert("Enter your captain/team name.");return}
+  if(players.length<teamCount*squadSize){
+    alert("You need at least "+(teamCount*squadSize)+" players.");return;
   }
-  return code;
-}
+  const unique=new Set(players.map(x=>x.toLowerCase()));
+  if(unique.size!==players.length){alert("Player names must be unique.");return}
 
-function show(id){
-  $(id).classList.remove("hidden");
-}
+  let code=randomCode();
+  while((await get(ref(db,"rooms/"+code))).exists())code=randomCode();
 
-function hide(id){
-  $(id).classList.add("hidden");
-}
+  const teams=Array.from({length:teamCount},(_,i)=>({
+    id:i,name:i===0?hostName:"Waiting for captain",
+    money:budget,squad:[],memberId:i===0?clientId:null
+  }));
 
-function saveSession(){
-  localStorage.setItem("footballAuctionSession",
-    JSON.stringify({roomCode:roomCode,myId:myId}));
-}
-
-async function restoreSession(){
-  try{
-    const s=JSON.parse(localStorage.getItem("footballAuctionSession")||"null");
-    if(!s) return;
-    const snap=await get(ref(db,"rooms/"+s.roomCode));
-    if(!snap.exists()) return;
-    roomCode=s.roomCode;
-    myId=s.myId;
-    isHost=snap.val().host===myId;
-    listenRoom();
-  }catch(e){ console.warn(e); }
-}
-
-
-/* =========================
-   CREATE ROOM
-========================= */
-
-window.createRoom = async function(){
-
-  const teamCount =
-    Number($("teamCount").value);
-
-  const squadSize =
-    Number($("squadSize").value);
-
-  const budget =
-    Number($("budget").value);
-
-  const increment =
-    Number($("increment").value);
-
-  const text =
-    $("players").value.trim();
-
-  const players =
-    text.split("\n")
-    .map(x=>x.trim())
-    .filter(Boolean);
-
-  if(players.length < teamCount*squadSize){
-    alert(
-      `You need at least ${teamCount*squadSize} players.`
-    );
-    return;
-  }
-
-  const code = roomId();
-
-  roomCode = code;
-
-  isHost = true;
-
-  const teams = [];
-
-  for(let i=0;i<teamCount;i++){
-
-    teams.push({
-      id:i,
-      name:"Captain "+String.fromCharCode(65+i),
-      money:budget,
-      squad:[]
-    });
-
-  }
-
-  const room = {
-
-    host:myId,
-
-    settings:{
-      teamCount,
-      squadSize,
-      budget,
-      increment
-    },
-
-    players:players,
-
-    remaining:[...players],
-
-    skipped:[],
-
-    current:null,
-
-    bid:0,
-
-    highestTeam:null,
-
-    round:1,
-
-    started:false,
-
-    finished:false,
-
-    teams:teams,
-
-    history:[],
-
-    members:{
-      [myId]:{
-        name:teams[0].name
-      }
-    }
-
+  roomCode=code;
+  room={
+   host:clientId,
+   settings:{teamCount,squadSize,budget,increment},
+   players:[...players],remaining:[...players],skipped:[],
+   current:null,bid:0,highestTeam:null,round:1,started:false,finished:false,
+   teams,members:{[clientId]:{name:hostName,teamId:0}}
   };
-
-  await set(
-    ref(db,"rooms/"+code),
-    room
-  );
+  await set(ref(db,"rooms/"+code),room);
   saveSession();
-  listenRoom();
-
-  showLobby();
-
+  subscribe();
+ }catch(e){alert("Could not create room: "+e.message)}
+ finally{$("createBtn").disabled=false}
 };
 
+window.joinRoom=async function(){
+ $("joinBtn").disabled=true;
+ try{
+  const code=$("joinCode").value.trim().toUpperCase();
+  const name=$("joinName").value.trim();
+  if(!code||!name){alert("Enter the room code and your captain/team name.");return}
 
-/* =========================
-   JOIN ROOM
-========================= */
+  const result=await runTransaction(ref(db,"rooms/"+code),current=>{
+   if(!current)return;
+   if(current.started)return;
+   current.members=current.members||{};
+   current.teams=current.teams||[];
 
-window.joinRoom = async function(){
+   if(current.members[clientId])return current;
 
-  const code =
-    $("joinCode").value.trim().toUpperCase();
+   const team=current.teams.find(t=>!t.memberId);
+   if(!team)return;
 
-  const name =
-    $("joinName").value.trim();
+   team.memberId=clientId;
+   team.name=name;
+   current.members[clientId]={name,teamId:team.id};
+   return current;
+  });
 
-  if(!code || !name){
-    alert("Enter room code and your name.");
-    return;
-  }
+  if(!result.committed){alert("Room is full, already started, or does not exist.");return}
 
-  const snapshot =
-    await get(ref(db,"rooms/"+code));
-
-  if(!snapshot.exists()){
-    alert("Room not found.");
-    return;
-  }
-
-  const room =
-    snapshot.val();
-
-  if(room.started){
-    alert("Auction has already started.");
-    return;
-  }
-
-  roomCode = code;
-
-  isHost = false;
-
-  const members =
-    room.members || {};
-
-  members[myId] = {
-    name:name
-  };
-
-  await update(
-    ref(db,"rooms/"+code),
-    {
-      members:members
-    }
-  );
+  roomCode=code;
   saveSession();
-  listenRoom();
-
-  showLobby();
-
+  subscribe();
+ }catch(e){alert("Could not join room: "+e.message)}
+ finally{$("joinBtn").disabled=false}
 };
-
-
-/* =========================
-   LISTEN TO ROOM
-========================= */
-
-function listenRoom(){
-
-  onValue(
-    ref(db,"rooms/"+roomCode),
-    snapshot=>{
-
-      if(!snapshot.exists()){
-        alert("Room no longer exists.");
-        location.reload();
-        return;
-      }
-
-      roomData =
-        snapshot.val();
-
-      isHost =
-        roomData.host === myId;
-
-      if(roomData.started){
-
-        hide("home");
-        hide("lobby");
-        show("auction");
-
-        renderAuction();
-
-      }else{
-
-        hide("home");
-        hide("auction");
-        show("lobby");
-
-        renderLobby();
-
-      }
-
-    }
-  );
-
-}
-
-
-/* =========================
-   SHOW LOBBY
-========================= */
-
-function showLobby(){
-
-  hide("home");
-  show("lobby");
-
-  $("roomCodeDisplay").textContent =
-    roomCode;
-
-}
-
-
-/* =========================
-   RENDER LOBBY
-========================= */
 
 function renderLobby(){
+ $("roomCodeDisplay").textContent=roomCode;
+ const teams=room.teams||[];
+ $("lobbyTeams").innerHTML=teams.map((t,i)=>`
+  <div class="team">
+   <b>Team ${i+1}</b><br>
+   ${t.memberId?`👤 ${esc(t.name)} ${t.memberId===room.host?"👑 Host":""}`:
+   '<span class="muted">Waiting for captain...</span>'}
+  </div>`).join("");
 
-  $("roomCodeDisplay").textContent =
-    roomCode;
+ const joined=teams.filter(t=>t.memberId).length;
+ const total=room.settings.teamCount;
 
-  const members =
-    roomData.members || {};
-
-  let html="";
-
-  Object.values(members).forEach((m,i)=>{
-
-    html += `
-      <div class="team">
-        👤 <b>${escapeHtml(m.name)}</b>
-        ${i===0 ? " 👑" : ""}
-      </div>
-    `;
-
-  });
-
-  $("lobbyTeams").innerHTML =
-    html;
-
-  if(isHost){
-
-    show("hostControls");
-
-    $("lobbyStatus").textContent =
-      "You are the host. Start when everyone has joined.";
-
-  }else{
-
-    hide("hostControls");
-
-    $("lobbyStatus").textContent =
-      "Waiting for the host to start...";
-
-  }
-
+ if(isHost()){
+  show("hostLobby");
+  $("hostLobbyInfo").textContent=`${joined}/${total} captains joined.`;
+  $("startBtn").disabled=joined!==total;
+  $("lobbyStatus").textContent=joined===total?"Everyone has joined. Start the auction when ready.":"Waiting for "+(total-joined)+" captain(s)...";
+ }else{
+  hide("hostLobby");
+  $("lobbyStatus").textContent=`Waiting for host to start • ${joined}/${total} captains joined.`;
+ }
 }
 
-
-/* =========================
-   START AUCTION
-========================= */
-
-window.startAuction = async function(){
-
-  if(!isHost)return;
-
-  const members =
-    roomData.members || {};
-
-  const teamCount =
-    roomData.settings.teamCount;
-
-  const names =
-    Object.values(members);
-
-  if(names.length < teamCount){
-
-    alert(
-      `Waiting for ${teamCount - names.length} more captain(s).`
-    );
-
-    return;
-  }
-
-  const teams = roomData.teams || [];
-
-  for(let i=0;i<teamCount;i++){
-    const teamMember = Object.values(members).find(m => m.teamId === i);
-    if(teamMember) teams[i].name = teamMember.name;
-  }
-
-  await update(
-    ref(db,"rooms/"+roomCode),
-    {
-      teams:teams,
-      started:true
-    }
-  );
-
+window.startAuction=async function(){
+ if(!isHost())return;
+ const teams=room.teams||[];
+ if(teams.some(t=>!t.memberId)){alert("Everyone must join first.");return}
+ await update(ref(db,"rooms/"+roomCode),{started:true});
 };
-
-
-/* =========================
-   RENDER AUCTION
-========================= */
 
 function renderAuction(){
+ $("auctionRoom").textContent=roomCode;
+ $("roundNumber").textContent=room.round||1;
+ const me=myTeam();
+ $("myTeamLabel").textContent=me?` | You: ${esc(me.name)}`:"";
 
-  $("auctionRoom").textContent =
-    roomCode;
+ if(room.current){
+  $("currentPlayer").textContent=room.current;
+  $("currentBid").textContent=`Current bid: ${room.bid||0}M`;
+  const winner=(room.teams||[]).find(t=>t.id===room.highestTeam);
+  $("highestBidder").textContent=winner?`Highest bidder: ${winner.name}`:"No bids yet";
+ }else{
+  $("currentPlayer").textContent=room.finished?"🏁 Auction Finished":"Waiting for host to select a player...";
+  $("currentBid").textContent=room.finished?"":"No active bid";
+  $("highestBidder").textContent="";
+ }
 
-  $("roundNumber").textContent =
-    roomData.round || 1;
-
-  const current =
-    roomData.current;
-
-  if(current){
-
-    $("currentPlayer").textContent =
-      current;
-
-    $("currentBid").textContent =
-      "Current bid: "+
-      (roomData.bid || 0)+"M";
-
-  }else{
-
-    $("currentPlayer").textContent =
-      "Waiting for next player...";
-
-    $("currentBid").textContent =
-      "No active bid";
-
-  }
-
-  renderAvailable();
-  renderBidButtons();
-  renderTeams();
-  renderHistory();
-
-  const me = roomData.members && roomData.members[myId];
-  if(me){
-    const mine = (roomData.teams||[]).find(t=>t.id===me.teamId);
-    $("myTeamLabel").textContent = mine ? " | You: "+mine.name : "";
-  }
-
-  if(isHost)
-    show("hostAuctionControls");
-  else
-    hide("hostAuctionControls");
-
+ renderBid();
+ renderAvailable();
+ renderTeams();
+ renderHistory();
+ if(isHost())show("hostAuction");else hide("hostAuction");
 }
 
+function renderBid(){
+ const t=myTeam();
+ if(!t){
+  $("myBidArea").innerHTML='<span class="danger">Your team could not be assigned.</span>';
+  $("bidButtons").innerHTML="";
+  return;
+ }
+ const inc=Number(room.settings.increment);
+ const next=Number(room.bid||0)+inc;
+ const full=t.squad.length>=Number(room.settings.squadSize);
+ const can=!!room.current&&!room.finished&&!full&&t.money>=next&&room.highestTeam!==t.id;
 
-/* =========================
-   AVAILABLE PLAYERS
-========================= */
+ $("myBidArea").innerHTML=`<div class="notice"><b>${esc(t.name)}</b> — ${t.money}M left — ${t.squad.length}/${room.settings.squadSize} players</div>`;
+ $("bidButtons").innerHTML=`<button class="bid" onclick="placeBid()" ${can?"":"disabled"}>💰 BID ${next}M</button>`;
+}
+
+window.placeBid=async function(){
+ const t=myTeam();
+ if(!t||!room.current)return;
+
+ const inc=Number(room.settings.increment);
+ const result=await runTransaction(ref(db,"rooms/"+roomCode),current=>{
+  if(!current||!current.current||current.finished)return;
+  const member=current.members?.[clientId];
+  if(!member||member.teamId!==t.id)return;
+  const team=current.teams.find(x=>x.id===t.id);
+  const next=Number(current.bid||0)+inc;
+  if(!team||team.money<next||team.squad.length>=current.settings.squadSize)return;
+  if(current.highestTeam===team.id)return;
+  current.bid=next;
+  current.highestTeam=team.id;
+  return current;
+ });
+ if(!result.committed)alert("Your bid was not accepted. Another bid may have happened first.");
+};
+
+window.nextPlayer=async function(){
+ if(!isHost()||room.finished)return;
+ if(room.current){alert("Finish or skip the current player first.");return}
+
+ let remaining=[...(room.remaining||[])];
+ let skipped=[...(room.skipped||[])];
+ let round=Number(room.round||1);
+
+ if(!remaining.length&&skipped.length){remaining=[...skipped];skipped=[];round++}
+ if(!remaining.length){
+  await update(ref(db,"rooms/"+roomCode),{finished:true});
+  return;
+ }
+
+ const index=Math.floor(Math.random()*remaining.length);
+ const player=remaining.splice(index,1)[0];
+
+ await update(ref(db,"rooms/"+roomCode),{
+  remaining,skipped,current:player,bid:0,highestTeam:null,round
+ });
+};
+
+window.sellPlayer=async function(){
+ if(!isHost()||!room.current){alert("No active player.");return}
+ if(room.highestTeam===null){alert("Nobody has bid.");return}
+
+ const teams=structuredClone(room.teams||[]);
+ const team=teams.find(t=>t.id===room.highestTeam);
+ const price=Number(room.bid||0);
+ if(!team){alert("Winning team not found.");return}
+ if(team.money<price||team.squad.length>=room.settings.squadSize){alert("Sale is no longer valid.");return}
+
+ team.money-=price;
+ team.squad.push({name:room.current,price});
+ const history=[...(room.history||[])];
+ history.unshift({player:room.current,teamId:team.id,team:team.name,price});
+
+ const finished=teams.every(t=>t.squad.length>=room.settings.squadSize);
+
+ await update(ref(db,"rooms/"+roomCode),{
+  teams,history,current:null,bid:0,highestTeam:null,finished
+ });
+};
+
+window.skipPlayer=async function(){
+ if(!isHost()||!room.current){alert("No active player.");return}
+ if(Number(room.bid||0)>0){alert("A player with a bid cannot be skipped.");return}
+ const skipped=[...(room.skipped||[]),room.current];
+ await update(ref(db,"rooms/"+roomCode),{skipped,current:null,bid:0,highestTeam:null});
+};
+
+window.undoSale=async function(){
+ if(!isHost())return;
+ const history=[...(room.history||[])];
+ if(!history.length){alert("Nothing to undo.");return}
+
+ const last=history.shift();
+ const teams=structuredClone(room.teams||[]);
+ const team=teams.find(t=>t.id===last.teamId);
+ if(!team){alert("Previous team not found.");return}
+
+ const idx=team.squad.findIndex(p=>p.name===last.player&&Number(p.price)===Number(last.price));
+ if(idx<0){alert("Previous sale not found.");return}
+
+ team.squad.splice(idx,1);
+ team.money+=Number(last.price);
+
+ const remaining=[...(room.remaining||[])];
+ if(!remaining.includes(last.player))remaining.push(last.player);
+
+ await update(ref(db,"rooms/"+roomCode),{
+  teams,history,remaining,current:null,bid:0,highestTeam:null,finished:false
+ });
+};
 
 function renderAvailable(){
-
-  const remaining =
-    roomData.remaining || [];
-
-  const skipped =
-    roomData.skipped || [];
-
-  let html="";
-
-  remaining.forEach(p=>{
-
-    html +=
-      `<span class="chip">${escapeHtml(p)}</span>`;
-
-  });
-
-  if(skipped.length){
-
-    html +=
-      `<span class="chip warning">
-        ${skipped.length} skipped
-      </span>`;
-
-  }
-
-  $("availablePlayers").innerHTML =
-    html ||
-    '<span class="muted">No players remaining.</span>';
-
+ const r=room.remaining||[];
+ $("availableCount").textContent=r.length;
+ $("availablePlayers").innerHTML=r.length?r.map(p=>`<span class="chip">${esc(p)}</span>`).join(""):'<span class="muted">No normal-round players remaining.</span>';
+ const s=room.skipped||[];
+ $("skippedInfo").textContent=s.length?`${s.length} skipped player(s) will return in the next round.`:"";
 }
-
-
-/* =========================
-   BID BUTTONS
-========================= */
-
-function renderBidButtons(){
-
-  const teams = roomData.teams || [];
-  const inc = Number(roomData.settings.increment);
-  const currentBid = Number(roomData.bid || 0);
-
-  let myTeam = null;
-  const member = roomData.members && roomData.members[myId];
-
-  if(member){
-    myTeam = teams.find(t => t.id === member.teamId);
-  }
-
-  if(!myTeam){
-    $("bidButtons").innerHTML =
-      '<span class="muted">Your team could not be assigned.</span>';
-    return;
-  }
-
-  const nextBid = currentBid + inc;
-  const full = myTeam.squad.length >= Number(roomData.settings.squadSize);
-  const noMoney = myTeam.money < nextBid;
-  const ownLastBid = roomData.highestTeam === myTeam.id;
-  const disabled = !roomData.current || full || noMoney || ownLastBid;
-
-  $("bidButtons").innerHTML = `
-    <button class="bid"
-      onclick="placeBid(${myTeam.id})"
-      ${disabled ? "disabled" : ""}>
-      💰 ${esc(myTeam.name)} — BID ${nextBid}M
-      <small style="display:block">${myTeam.money}M left • ${myTeam.squad.length}/${roomData.settings.squadSize}</small>
-    </button>`;
-
-}
-
-
-/* =========================
-   PLACE BID
-========================= */
-
-window.placeBid = async function(teamId){
-
-  if(!roomData.current)return;
-
-  const member = roomData.members && roomData.members[myId];
-  if(!member || member.teamId !== teamId){
-    alert("You can only bid for your own team.");
-    return;
-  }
-
-  const team = (roomData.teams || []).find(t => t.id === teamId);
-  if(!team)return;
-
-  const inc = Number(roomData.settings.increment);
-  const nextBid = Number(roomData.bid || 0) + inc;
-
-  if(team.money < nextBid){
-    alert("Not enough budget.");
-    return;
-  }
-
-  if(roomData.highestTeam === teamId){
-    alert("Another team must bid first.");
-    return;
-  }
-
-  await update(ref(db,"rooms/"+roomCode),{
-    bid:nextBid,
-    highestTeam:teamId
-  });
-};
-
-
-/* =========================
-   NEXT RANDOM PLAYER
-========================= */
-
-window.hostNextPlayer = async function(){
-
-  if(!isHost)return;
-
-  let remaining =
-    [...(roomData.remaining || [])];
-
-  let skipped =
-    [...(roomData.skipped || [])];
-
-  let round =
-    roomData.round || 1;
-
-  /*
-    If normal players are finished,
-    bring skipped players back.
-  */
-
-  if(!remaining.length && skipped.length){
-
-    remaining =
-      [...skipped];
-
-    skipped=[];
-
-    round++;
-
-  }
-
-  if(!remaining.length){
-
-    await update(
-      ref(db,"rooms/"+roomCode),
-      {
-        current:null,
-        finished:true
-      }
-    );
-
-    alert("Auction finished!");
-
-    return;
-  }
-
-  const index =
-    Math.floor(
-      Math.random()*remaining.length
-    );
-
-  const player =
-    remaining[index];
-
-  remaining.splice(index,1);
-
-  await update(
-    ref(db,"rooms/"+roomCode),
-    {
-      remaining:remaining,
-      skipped:skipped,
-      current:player,
-      bid:0,
-      highestTeam:null,
-      round:round
-    }
-  );
-
-};
-
-
-/* =========================
-   SELL PLAYER
-========================= */
-
-window.hostSellPlayer = async function(){
-
-  if(!isHost)return;
-
-  if(!roomData.current){
-    alert("No player selected.");
-    return;
-  }
-
-  if(roomData.highestTeam === null){
-
-    alert("Nobody has bid.");
-    return;
-
-  }
-
-  const teams =
-    [...roomData.teams];
-
-  const team =
-    teams[roomData.highestTeam];
-
-  const price =
-    roomData.bid;
-
-  if(team.money < price){
-    alert("Team cannot afford this player.");
-    return;
-  }
-
-  if(
-    team.squad.length >=
-    roomData.settings.squadSize
-  ){
-
-    alert("This team already has a full squad.");
-    return;
-
-  }
-
-  team.money -= price;
-
-  team.squad.push({
-    name:roomData.current,
-    price:price
-  });
-
-  const history =
-    [...(roomData.history || [])];
-
-  history.unshift({
-
-    player:roomData.current,
-    team:team.name,
-    price:price
-
-  });
-
-  await update(
-    ref(db,"rooms/"+roomCode),
-    {
-      teams:teams,
-      history:history,
-      current:null,
-      bid:0,
-      highestTeam:null
-    }
-  );
-
-};
-
-
-/* =========================
-   SKIP PLAYER
-========================= */
-
-window.hostSkipPlayer = async function(){
-
-  if(!isHost)return;
-
-  if(!roomData.current){
-    alert("No player selected.");
-    return;
-  }
-
-  const skipped =
-    [...(roomData.skipped || [])];
-
-  skipped.push(
-    roomData.current
-  );
-
-  await update(
-    ref(db,"rooms/"+roomCode),
-    {
-      skipped:skipped,
-      current:null,
-      bid:0,
-      highestTeam:null
-    }
-  );
-
-};
-
-
-/* =========================
-   UNDO
-========================= */
-
-window.hostUndo = async function(){
-
-  if(!isHost){
-    return;
-  }
-
-  const history =
-    [...(roomData.history || [])];
-
-  if(!history.length){
-
-    alert("Nothing to undo.");
-    return;
-
-  }
-
-  const last =
-    history.shift();
-
-  const teams =
-    [...roomData.teams];
-
-  const team =
-    teams.find(
-      t=>t.name===last.team
-    );
-
-  if(team){
-
-    team.money +=
-      last.price;
-
-    team.squad =
-      team.squad.filter(
-        p=>!(
-          p.name===last.player &&
-          p.price===last.price
-        )
-      );
-
-  }
-
-  const remaining =
-    [...(roomData.remaining || [])];
-
-  remaining.push(
-    last.player
-  );
-
-  await update(
-    ref(db,"rooms/"+roomCode),
-    {
-      teams:teams,
-      history:history,
-      remaining:remaining,
-      current:null,
-      bid:0,
-      highestTeam:null
-    }
-  );
-
-};
-
-
-/* =========================
-   TEAMS
-========================= */
 
 function renderTeams(){
-
-  const teams =
-    roomData.teams || [];
-
-  let html="";
-
-  teams.forEach(team=>{
-
-    html += `
-      <div class="team">
-
-        <h3>🏆 ${escapeHtml(team.name)}</h3>
-
-        <div class="money">
-          ${team.money}M remaining
-        </div>
-
-        <p>
-          Squad:
-          ${team.squad.length}/
-          ${roomData.settings.squadSize}
-        </p>
-
-        ${
-          team.squad.length
-          ?
-          team.squad.map(
-            p=>`
-            <div>
-              ${escapeHtml(p.name)}
-              —
-              ${p.price}M
-            </div>
-            `
-          ).join("")
-          :
-          '<span class="muted">No players yet</span>'
-        }
-
-      </div>
-    `;
-
-  });
-
-  $("teams").innerHTML =
-    html;
-
+ $("teams").innerHTML=(room.teams||[]).map(t=>`
+  <div class="team">
+   <h3>🏆 ${esc(t.name)}</h3>
+   <div class="money">${t.money}M remaining</div>
+   <p>Squad: ${t.squad.length}/${room.settings.squadSize}</p>
+   ${t.squad.length?t.squad.map(p=>`<div>${esc(p.name)} — ${p.price}M</div>`).join(""):'<span class="muted">No players yet</span>'}
+  </div>`).join("");
 }
-
-
-/* =========================
-   HISTORY
-========================= */
 
 function renderHistory(){
-
-  const history =
-    roomData.history || [];
-
-  if(!history.length){
-
-    $("history").innerHTML =
-      '<span class="muted">No players sold yet.</span>';
-
-    return;
-
-  }
-
-  $("history").innerHTML =
-    history.map(
-      h=>`
-      <div class="team">
-        <b>${escapeHtml(h.player)}</b>
-        →
-        ${escapeHtml(h.team)}
-        for
-        <b>${h.price}M</b>
-      </div>
-      `
-    ).join("");
-
+ const h=room.history||[];
+ $("history").innerHTML=h.length?h.map(x=>`<div class="team"><b>${esc(x.player)}</b> → ${esc(x.team)} for <b>${x.price}M</b></div>`).join(""):'<span class="muted">No players sold yet.</span>';
 }
 
+window.copyRoomCode=async function(){
+ try{await navigator.clipboard.writeText(roomCode);alert("Room code copied!")}
+ catch(e){alert("Room code: "+roomCode)}
+};
 
-/* =========================
-   ESCAPE HTML
-========================= */
+window.leaveRoom=function(){
+ if(unsubscribe)unsubscribe();
+ unsubscribe=null;room=null;roomCode="";clearSession();
+ location.reload();
+};
 
-function escapeHtml(text){
-
-  return String(text)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-
-}
-
-restoreSession();
-
+/* Restore the room on refresh using the same browser client ID. */
+(async function(){
+ try{
+  const s=session();
+  if(!s?.roomCode)return;
+  roomCode=s.roomCode;
+  const snap=await get(ref(db,"rooms/"+roomCode));
+  if(!snap.exists()){clearSession();return}
+  room=snap.val();
+  if(!room.members?.[clientId] && room.host!==clientId){clearSession();return}
+  subscribe();
+ }catch(e){console.warn(e)}
+})();
 </script>
-
 </body>
 </html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Football Auction Night</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:#07110d;color:#f4f7f5}
+header{padding:22px 18px;text-align:center;background:linear-gradient(135deg,#0d2b1d,#123d27);border-bottom:1px solid #28563e}
+h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#b8cfc2}
+.wrap{max-width:1100px;margin:auto;padding:18px}
+.grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:14px}
+.card{background:#0d1c15;border:1px solid #214532;border-radius:16px;padding:16px;box-shadow:0 10px 30px #0004}
+.team h2{margin:0 0 8px}.money{font-size:28px;font-weight:800}.muted{color:#9db2a6}
+.auction{text-align:center}.player{font-size:34px;font-weight:900;margin:14px 0 4px}.position{color:#9db2a6}
+.bid{font-size:48px;font-weight:900;margin:12px 0;color:#d8ff8c}
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+button,input{font:inherit;border-radius:10px;border:1px solid #315943;padding:11px 14px}
+button{background:#173b29;color:white;cursor:pointer;font-weight:700}button:hover{filter:brightness(1.15)}
+button.primary{background:#8bc34a;color:#091109;border-color:#8bc34a}.danger{background:#57201e}
+input{background:#08130e;color:white;width:100%}.setup{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.row{display:flex;gap:8px;margin-top:8px}.row input{flex:1}
+ul{padding-left:20px;max-height:260px;overflow:auto}.sold{border-top:1px solid #234333;padding:8px 0}
+.big{font-size:18px;font-weight:800}
+.hidden{display:none}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.setup{grid-template-columns:1fr 1fr}.player{font-size:28px}}
+</style>
+</head>
+<body>
+<header><h1>⚽ Football Auction Night</h1><p>Build your dream 7-a-side team</p></header>
+<div class="wrap">
+
+<div class="card" style="margin-bottom:14px">
+  <div class="setup">
+    <div><label>Captain 1</label><input id="cap1" value="Captain A"></div>
+    <div><label>Captain 2</label><input id="cap2" value="Captain B"></div>
+    <div><label>Budget (M)</label><input id="budget" type="number" value="200"></div>
+    <div><label>Bid increment (M)</label><input id="inc" type="number" value="5"></div>
+  </div>
+  <div class="row"><input id="playerInput" placeholder="Add player name..."><button onclick="addPlayer()">Add Player</button></div>
+  <div id="playerList" class="muted" style="margin-top:8px"></div>
+  <div class="controls" style="margin-top:12px">
+    <button class="primary" onclick="startAuction()">Start Auction</button>
+    <button onclick="resetAll()" class="danger">Reset</button>
+  </div>
+</div>
+
+<div class="grid">
+ <section class="card team">
+   <h2 id="team1">Captain A</h2><div class="money"><span id="money1">200</span>M</div>
+   <div class="muted">Squad <span id="count1">0</span>/7</div>
+   <ul id="squad1"></ul>
+ </section>
+
+ <section class="card auction">
+   <div class="muted">CURRENT PLAYER</div>
+   <div id="player" class="player">Ready?</div>
+   <div id="pos" class="position">Start the auction to begin</div>
+   <div id="bid" class="bid">0M</div>
+   <div class="muted">Highest bidder: <span id="highest">—</span></div>
+   <div class="controls" style="margin-top:14px">
+     <button onclick="bid(1)">🔴 <span id="bidname1">Captain A</span> BID</button>
+     <button onclick="bid(2)">🔵 <span id="bidname2">Captain B</span> BID</button>
+     <button class="primary" onclick="sold()">🔨 SOLD</button>
+     <button onclick="skip()">Skip</button>
+   </div>
+   <div style="margin-top:14px"><button onclick="undo()" id="undoBtn">↩ Undo last sale</button></div>
+ </section>
+
+ <section class="card team">
+   <h2 id="team2">Captain B</h2><div class="money"><span id="money2">200</span>M</div>
+   <div class="muted">Squad <span id="count2">0</span>/7</div>
+   <ul id="squad2"></ul>
+ </section>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h2>📜 Auction History</h2><div id="history" class="muted">No sales yet.</div>
+</div>
+</div>
+
+<script>
+let players=[], current=-1, bidValue=0, highest=0, history=[], lastSale=null;
+let teams=[{name:'Captain A',money:200,squad:[]},{name:'Captain B',money:200,squad:[]}];
+
+function syncNames(){
+ teams[0].name=document.getElementById('cap1').value||'Captain A';
+ teams[1].name=document.getElementById('cap2').value||'Captain B';
+ document.getElementById('team1').textContent=teams[0].name;
+ document.getElementById('team2').textContent=teams[1].name;
+ document.getElementById('bidname1').textContent=teams[0].name;
+ document.getElementById('bidname2').textContent=teams[1].name;
+}
+document.getElementById('cap1').oninput=syncNames;document.getElementById('cap2').oninput=syncNames;
+
+function addPlayer(){
+ let x=document.getElementById('playerInput').value.trim();
+ if(!x)return;
+ players.push(x);document.getElementById('playerInput').value='';renderPlayers();
+}
+function renderPlayers(){
+ document.getElementById('playerList').innerHTML=players.length?'Players: '+players.map((p,i)=>`${i+1}. ${p}`).join(' • '):'No players added yet.';
+}
+function startAuction(){
+ syncNames();
+ teams.forEach(t=>{t.money=+document.getElementById('budget').value||200;t.squad=[]});
+ history=[];current=-1;nextPlayer();render();
+}
+function nextPlayer(){
+ current++;
+ if(current>=players.length){document.getElementById('player').textContent='AUCTION COMPLETE 🏆';document.getElementById('pos').textContent='All players processed';return;}
+ bidValue=0;highest=0;document.getElementById('player').textContent=players[current];
+ document.getElementById('pos').textContent=`Player ${current+1} of ${players.length}`;
+ document.getElementById('bid').textContent='0M';document.getElementById('highest').textContent='—';
+}
+function bid(t){
+ if(current<0||current>=players.length)return;
+ let inc=+document.getElementById('inc').value||5;
+ let next=bidValue+inc;
+ if(next>teams[t-1].money){alert('Not enough budget for this bid.');return}
+ if(highest===t){return}
+ bidValue=next;highest=t;
+ document.getElementById('bid').textContent=bidValue+'M';
+ document.getElementById('highest').textContent=teams[t-1].name;
+}
+function sold(){
+ if(!highest){alert('Place a bid first.');return}
+ let t=teams[highest-1];
+ if(t.squad.length>=7){alert(t.name+' already has 7 players.');return}
+ let sale={player:players[current],team:highest,price:bidValue,index:current};
+ t.money-=bidValue;t.squad.push({name:sale.player,price:sale.price});
+ history.push(sale);lastSale=sale;render();nextPlayer();
+}
+function skip(){if(current>=0){history.push({player:players[current],team:0,price:0,index:current,skip:true});nextPlayer();render()}}
+function undo(){
+ let s=history.pop();if(!s||s.skip)return;
+ let t=teams[s.team-1];t.money+=s.price;t.squad.pop();current=s.index;bidValue=0;highest=0;
+ document.getElementById('player').textContent=players[current];document.getElementById('pos').textContent=`Player ${current+1} of ${players.length}`;
+ document.getElementById('bid').textContent='0M';document.getElementById('highest').textContent='—';render();
+}
+function render(){
+ syncNames();
+ document.getElementById('money1').textContent=teams[0].money;document.getElementById('money2').textContent=teams[1].money;
+ document.getElementById('count1').textContent=teams[0].squad.length;document.getElementById('count2').textContent=teams[1].squad.length;
+ document.getElementById('squad1').innerHTML=teams[0].squad.map(x=>`<li>${x.name} — <b>${x.price}M</b></li>`).join('');
+ document.getElementById('squad2').innerHTML=teams[1].squad.map(x=>`<li>${x.name} — <b>${x.price}M</b></li>`).join('');
+ document.getElementById('history').innerHTML=history.length?history.map(s=>s.skip?`<div class="sold">${s.player} — skipped</div>`:`<div class="sold"><b>${s.player}</b> → ${teams[s.team-1].name} for <b>${s.price}M</b></div>`).reverse().join(''):'No sales yet.';
+}
+function resetAll(){if(confirm('Reset the entire auction?'))location.reload()}
+renderPlayers();syncNames();
+</script>
+</body>
+</html>

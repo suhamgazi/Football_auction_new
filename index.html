@@ -151,10 +151,24 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
+/* Generate an id that is guaranteed safe to use as a Firebase key/path
+   segment. Firebase keys cannot contain '.', '#', '$', '[', ']', '/'.
+   crypto.randomUUID() is safe, but the OLD fallback used Math.random()
+   directly, which always produces a decimal point (e.g. "0.1234") -
+   that "." made the id invalid as a Firebase path segment on any
+   browser/context where crypto.randomUUID isn't available, silently
+   breaking the join flow for that user. */
+function safeId(){
+ if(crypto.randomUUID)return crypto.randomUUID();
+ let s="";
+ for(let i=0;i<32;i++)s+=Math.floor(Math.random()*16).toString(16);
+ return s;
+}
+
 const CLIENT_KEY="footballAuctionClientId";
 let clientId=localStorage.getItem(CLIENT_KEY);
-if(!clientId){
- clientId=(crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random());
+if(!clientId||/[.#$\[\]/]/.test(clientId)){
+ clientId=safeId();
  localStorage.setItem(CLIENT_KEY,clientId);
 }
 
@@ -184,6 +198,14 @@ function randomCode(){
  return s;
 }
 
+function fbErr(e){
+ // Surfaces the real Firebase error code (e.g. permission_denied) so
+ // join/create failures are actually diagnosable instead of a bare
+ // generic message.
+ if(!e)return "unknown error";
+ return (e.code?e.code+": ":"")+(e.message||String(e));
+}
+
 function subscribe(){
  if(unsubscribe)unsubscribe();
  unsubscribe=onValue(ref(db,"rooms/"+roomCode),snap=>{
@@ -193,7 +215,7 @@ function subscribe(){
    room=snap.val();
    saveSession();
    render();
- },err=>alert("Firebase error: "+err.message));
+ },err=>alert("Firebase error: "+fbErr(err)));
 }
 
 function render(){
@@ -237,7 +259,7 @@ window.createRoom=async function(){
   await set(ref(db,"rooms/"+code),room);
   saveSession();
   subscribe();
- }catch(e){alert("Could not create room: "+e.message)}
+ }catch(e){alert("Could not create room: "+fbErr(e))}
  finally{$("createBtn").disabled=false}
 };
 
@@ -257,44 +279,44 @@ window.joinRoom=async function(){
   }
 
   const roomRef=ref(db,"rooms/"+code);
-  const snap=await get(roomRef);
-
-  if(!snap.exists()){
+  const preSnap=await get(roomRef);
+  if(!preSnap.exists()){
    alert("Room "+code+" was not found. Check the code and make sure the host is still on the room.");
    return;
   }
 
-  const current=snap.val();
-
-  if(current.started){
-   alert("This auction has already started. New captains cannot join now.");
-   return;
-  }
-
-  const teams=Array.isArray(current.teams)?current.teams:Object.values(current.teams||{});
-  const freeIndex=teams.findIndex(t=>!t.memberId);
-
-  if(freeIndex<0){
-   alert("All captain/team slots in this room are already occupied.");
-   return;
-  }
-
-  /* Reserve the exact free team with a transaction.
-     This prevents two phones from taking the same team. */
-  const teamRef=ref(db,"rooms/"+code+"/teams/"+freeIndex);
-  const reserved=await runTransaction(teamRef,team=>{
-   if(!team || team.memberId)return;
-   return {...team,memberId:clientId,name};
+  /* Reserve a free team slot AND register the member in a single
+     atomic transaction on the whole room node. Doing this as two
+     separate writes (a transaction on teams/<i>, then a separate
+     update() on members/<clientId>) meant that if the second write
+     failed for any reason, the team slot showed as taken to everyone
+     else while the joining user themself got an error and never
+     actually got in - exactly the "host sees a captain join but the
+     captain says they can't join" symptom. A single transaction
+     avoids that half-joined state entirely and also handles two
+     people pressing JOIN at the same moment correctly (Firebase
+     retries the transaction with fresh data on conflict). */
+  let failReason=null;
+  let joinedTeamId=null;
+  const result=await runTransaction(roomRef,current=>{
+   if(!current)return; // room deleted mid-join
+   if(current.started){failReason="started";return;}
+   const teams=Array.isArray(current.teams)?[...current.teams]:Object.values(current.teams||{});
+   const freeIndex=teams.findIndex(t=>!t.memberId);
+   if(freeIndex<0){failReason="full";return;}
+   teams[freeIndex]={...teams[freeIndex],memberId:clientId,name};
+   current.teams=teams;
+   current.members={...(current.members||{}),[clientId]:{name,teamId:freeIndex}};
+   joinedTeamId=freeIndex;
+   return current;
   });
 
-  if(!reserved.committed){
-   alert("That team was just taken. Please press JOIN again.");
+  if(!result.committed){
+   if(failReason==="started")alert("This auction has already started. New captains cannot join now.");
+   else if(failReason==="full")alert("All captain/team slots in this room are already occupied.");
+   else alert("Could not join — please press JOIN again.");
    return;
   }
-
-  await update(roomRef,{
-   ["members/"+clientId]:{name,teamId:freeIndex}
-  });
 
   roomCode=code;
   saveSession();
@@ -302,7 +324,7 @@ window.joinRoom=async function(){
 
  }catch(e){
   console.error(e);
-  alert("Could not join the room: "+(e?.message||e));
+  alert("Could not join the room: "+fbErr(e));
  }finally{
   $("joinBtn").disabled=false;
  }

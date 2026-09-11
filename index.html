@@ -189,6 +189,7 @@ Share this code with the other captains.
   Room: <b id="auctionRoom"></b>
   &nbsp; | &nbsp;
   Round: <b id="roundNumber">1</b>
+  <span id="myTeamLabel"></span>
 </div>
 
 <div class="card">
@@ -270,7 +271,8 @@ const db = getDatabase(app);
 ========================= */
 
 let roomCode = "";
-let myId = "";
+let myId = localStorage.getItem("footballAuctionUserId") || crypto.randomUUID();
+localStorage.setItem("footballAuctionUserId", myId);
 let isHost = false;
 let roomData = null;
 
@@ -302,6 +304,24 @@ function show(id){
 
 function hide(id){
   $(id).classList.add("hidden");
+}
+
+function saveSession(){
+  localStorage.setItem("footballAuctionSession",
+    JSON.stringify({roomCode:roomCode,myId:myId}));
+}
+
+async function restoreSession(){
+  try{
+    const s=JSON.parse(localStorage.getItem("footballAuctionSession")||"null");
+    if(!s) return;
+    const snap=await get(ref(db,"rooms/"+s.roomCode));
+    if(!snap.exists()) return;
+    roomCode=s.roomCode;
+    myId=s.myId;
+    isHost=snap.val().host===myId;
+    listenRoom();
+  }catch(e){ console.warn(e); }
 }
 
 
@@ -341,8 +361,6 @@ window.createRoom = async function(){
   const code = roomId();
 
   roomCode = code;
-
-  myId = randomId();
 
   isHost = true;
 
@@ -404,7 +422,7 @@ window.createRoom = async function(){
     ref(db,"rooms/"+code),
     room
   );
-
+  saveSession();
   listenRoom();
 
   showLobby();
@@ -447,8 +465,6 @@ window.joinRoom = async function(){
 
   roomCode = code;
 
-  myId = randomId();
-
   isHost = false;
 
   const members =
@@ -464,7 +480,7 @@ window.joinRoom = async function(){
       members:members
     }
   );
-
+  saveSession();
   listenRoom();
 
   showLobby();
@@ -606,23 +622,11 @@ window.startAuction = async function(){
     return;
   }
 
-  const teams =
-    roomData.teams || [];
-
-  /*
-    Assign joined captains to teams.
-  */
-
-  const memberIds =
-    Object.keys(members);
+  const teams = roomData.teams || [];
 
   for(let i=0;i<teamCount;i++){
-
-    teams[i].name =
-      members[memberIds[i]]
-      ? members[memberIds[i]].name
-      : "Captain "+String.fromCharCode(65+i);
-
+    const teamMember = Object.values(members).find(m => m.teamId === i);
+    if(teamMember) teams[i].name = teamMember.name;
   }
 
   await update(
@@ -675,6 +679,12 @@ function renderAuction(){
   renderTeams();
   renderHistory();
 
+  const me = roomData.members && roomData.members[myId];
+  if(me){
+    const mine = (roomData.teams||[]).find(t=>t.id===me.teamId);
+    $("myTeamLabel").textContent = mine ? " | You: "+mine.name : "";
+  }
+
   if(isHost)
     show("hostAuctionControls");
   else
@@ -726,53 +736,36 @@ function renderAvailable(){
 
 function renderBidButtons(){
 
-  const teams =
-    roomData.teams || [];
+  const teams = roomData.teams || [];
+  const inc = Number(roomData.settings.increment);
+  const currentBid = Number(roomData.bid || 0);
 
-  const inc =
-    roomData.settings.increment;
+  let myTeam = null;
+  const member = roomData.members && roomData.members[myId];
 
-  const currentBid =
-    roomData.bid || 0;
+  if(member){
+    myTeam = teams.find(t => t.id === member.teamId);
+  }
 
-  let html="";
+  if(!myTeam){
+    $("bidButtons").innerHTML =
+      '<span class="muted">Your team could not be assigned.</span>';
+    return;
+  }
 
-  teams.forEach(team=>{
+  const nextBid = currentBid + inc;
+  const full = myTeam.squad.length >= Number(roomData.settings.squadSize);
+  const noMoney = myTeam.money < nextBid;
+  const ownLastBid = roomData.highestTeam === myTeam.id;
+  const disabled = !roomData.current || full || noMoney || ownLastBid;
 
-    const nextBid =
-      currentBid + inc;
-
-    const full =
-      team.squad.length >=
-      roomData.settings.squadSize;
-
-    const noMoney =
-      team.money < nextBid;
-
-    const disabled =
-      !roomData.current ||
-      full ||
-      noMoney;
-
-    html += `
-      <button
-        class="bid"
-        onclick="placeBid(${team.id})"
-        ${disabled ? "disabled":""}
-      >
-        ${escapeHtml(team.name)}
-        <br>
-        BID ${nextBid}M
-        <small>
-          ${team.money}M left
-        </small>
-      </button>
-    `;
-
-  });
-
-  $("bidButtons").innerHTML =
-    html;
+  $("bidButtons").innerHTML = `
+    <button class="bid"
+      onclick="placeBid(${myTeam.id})"
+      ${disabled ? "disabled" : ""}>
+      💰 ${esc(myTeam.name)} — BID ${nextBid}M
+      <small style="display:block">${myTeam.money}M left • ${myTeam.squad.length}/${roomData.settings.squadSize}</small>
+    </button>`;
 
 }
 
@@ -785,43 +778,32 @@ window.placeBid = async function(teamId){
 
   if(!roomData.current)return;
 
-  const teams =
-    roomData.teams || [];
+  const member = roomData.members && roomData.members[myId];
+  if(!member || member.teamId !== teamId){
+    alert("You can only bid for your own team.");
+    return;
+  }
 
-  const team =
-    teams[teamId];
-
+  const team = (roomData.teams || []).find(t => t.id === teamId);
   if(!team)return;
 
-  const inc =
-    roomData.settings.increment;
-
-  const nextBid =
-    (roomData.bid || 0)+inc;
+  const inc = Number(roomData.settings.increment);
+  const nextBid = Number(roomData.bid || 0) + inc;
 
   if(team.money < nextBid){
     alert("Not enough budget.");
     return;
   }
 
-  /*
-    A team cannot immediately bid
-    against itself.
-  */
-
   if(roomData.highestTeam === teamId){
     alert("Another team must bid first.");
     return;
   }
 
-  await update(
-    ref(db,"rooms/"+roomCode),
-    {
-      bid:nextBid,
-      highestTeam:teamId
-    }
-  );
-
+  await update(ref(db,"rooms/"+roomCode),{
+    bid:nextBid,
+    highestTeam:teamId
+  });
 };
 
 
@@ -1178,6 +1160,8 @@ function escapeHtml(text){
     .replaceAll("'","&#039;");
 
 }
+
+restoreSession();
 
 </script>
 
